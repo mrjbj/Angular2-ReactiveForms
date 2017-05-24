@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {FormGroup, FormBuilder} from '@angular/forms';
+import {FormGroup, FormBuilder, Validators} from '@angular/forms';
 
 import { Customer } from './customer';
 
@@ -15,14 +15,17 @@ export class CustomerComponent implements OnInit {
 
     ngOnInit(): void {
         this.customerForm = this._builder.group({
-            firstName: '',
-            lastName: '',
-            email: '',
+            firstName: ['', [Validators.required, Validators.minLength(3)]],
+            lastName: ['', [Validators.required, Validators.maxLength(50)]],
+            email: ['', [Validators.required, Validators.pattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+")]],
+            notification: 'email',
+            phone: '',
+            rating: 1,
             sendCatalog: true
         });
     }
    populateTestData() {
-        this.customerForm.setValue({
+        this.customerForm.patchValue({
             firstName: "Jason",
             lastName: "Jones",
             email: "jason@brucejones.biz",
@@ -30,7 +33,16 @@ export class CustomerComponent implements OnInit {
         });
     }
    save() {
-        console.log(this.customerForm.form);
+        console.log(this.customerForm);
         console.log('Saved: ' + JSON.stringify(this.customerForm.value));
+    }
+    setNotification(notifyVia: string): void {
+       const phoneControl = this.customerForm.get('phone');
+       if (notifyVia === 'text') {
+           phoneControl.setValidators(Validators.required);
+       } else {
+           phoneControl.clearValidators();
+       }
+       phoneControl.updateValueAndValidity();
     }
  }
