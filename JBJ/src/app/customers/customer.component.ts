@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {FormGroup, FormBuilder, Validators, AbstractControl, ValidatorFn} from '@angular/forms';
+import {FormGroup, FormBuilder, Validators, AbstractControl, ValidatorFn, FormArray} from '@angular/forms';
 
 import { Customer } from './customer';
 import 'rxjs/add/operator/debounceTime';
@@ -35,6 +35,9 @@ export class CustomerComponent implements OnInit {
     customer: Customer= new Customer();
     emailValidationMessage: string; 
 
+    get addresses() : FormArray {
+        return <FormArray>this.customerForm.get('addresses');
+    }
     private validationMessages = {
         required: 'Please enter your email address.', 
         pattern: 'Please enter a valid email address.'
@@ -52,14 +55,22 @@ export class CustomerComponent implements OnInit {
             } , {validator: emailMatcher}),
             notification: 'email',
             phone: '',
-            rating: ['', ratingRange(0, 7)],
-            sendCatalog: true
-        });
+            rating: ['', ratingRange(1, 5)],
+            sendCatalog: true,
+            addresses: this._builder.array([this.buildAddress()])
+            })
         this.customerForm.get('notification').valueChanges
                          .subscribe(value => this.setNotification(value));
         const emailControl = this.customerForm.get('emailGroup.email');
         emailControl.valueChanges.debounceTime(1000).subscribe( value => this.setMessage(emailControl));
     }
+
+    addAddress() : void {
+        this.addresses.push(this.buildAddress());
+    }
+
+
+
    populateTestData() {
         this.customerForm.patchValue({
             firstName: "Jason",
@@ -73,7 +84,16 @@ export class CustomerComponent implements OnInit {
         console.log('Saved: ' + JSON.stringify(this.customerForm.value));
     }
 
-
+   buildAddress() : FormGroup {
+        return this._builder.group({
+                addressType: 'home',
+                street1:    '',
+                street2:    '',
+                city:       '',
+                state:      '',
+                zip:        ''
+        });
+    }
     setMessage(c: AbstractControl): void {
         this.emailValidationMessage = '';
         if ((c.touched || c.dirty) && c.errors) {
