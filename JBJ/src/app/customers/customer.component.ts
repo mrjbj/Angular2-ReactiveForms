@@ -1,7 +1,29 @@
 import { Component, OnInit } from '@angular/core';
-import {FormGroup, FormBuilder, Validators} from '@angular/forms';
+import {FormGroup, FormBuilder, Validators, AbstractControl, ValidatorFn} from '@angular/forms';
 
 import { Customer } from './customer';
+
+
+function ratingRange(min: number, max: number) : ValidatorFn {
+    return  (c: AbstractControl): {[key: string]: boolean } | null => 
+    {
+        if (c.value != undefined && (isNaN(c.value) || c.value < min || c.value > max)) {
+            return {'range': true};
+        }
+        return null;
+    }
+};
+function emailMatcher(c: AbstractControl) {
+    let email = c.get('email');
+    let confirm = c.get('confirmEmail');
+    if (email.pristine || confirm.pristine) {
+        return null;
+    }
+    if (email.value === confirm.value) {
+        return null; 
+    }
+    return {'match': true};
+}
 
 @Component({
     selector: 'my-signup',
@@ -17,10 +39,13 @@ export class CustomerComponent implements OnInit {
         this.customerForm = this._builder.group({
             firstName: ['', [Validators.required, Validators.minLength(3)]],
             lastName: ['', [Validators.required, Validators.maxLength(50)]],
-            email: ['', [Validators.required, Validators.pattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+")]],
+            emailGroup: this._builder.group({
+                email: ['', [Validators.required, Validators.pattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+")]],
+                confirmEmail: ['', Validators.required]
+            } , {validator: emailMatcher}),
             notification: 'email',
             phone: '',
-            rating: 1,
+            rating: ['', ratingRange(0, 7)],
             sendCatalog: true
         });
     }
