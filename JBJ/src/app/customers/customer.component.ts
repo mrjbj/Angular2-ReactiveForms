@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import {FormGroup, FormBuilder, Validators, AbstractControl, ValidatorFn} from '@angular/forms';
 
 import { Customer } from './customer';
+import 'rxjs/add/operator/debounceTime';
 
 
 function ratingRange(min: number, max: number) : ValidatorFn {
@@ -26,12 +27,18 @@ function emailMatcher(c: AbstractControl) {
 }
 
 @Component({
-    selector: 'my-signup',
+    selector: ' my-signup',
     templateUrl: './app/customers/customer.component.html'
 })
 export class CustomerComponent implements OnInit {
     customerForm: FormGroup;
     customer: Customer= new Customer();
+    emailValidationMessage: string; 
+
+    private validationMessages = {
+        required: 'Please enter your email address.', 
+        pattern: 'Please enter a valid email address.'
+    };
 
     constructor(private _builder: FormBuilder) {};
 
@@ -48,6 +55,10 @@ export class CustomerComponent implements OnInit {
             rating: ['', ratingRange(0, 7)],
             sendCatalog: true
         });
+        this.customerForm.get('notification').valueChanges
+                         .subscribe(value => this.setNotification(value));
+        const emailControl = this.customerForm.get('emailGroup.email');
+        emailControl.valueChanges.debounceTime(1000).subscribe( value => this.setMessage(emailControl));
     }
    populateTestData() {
         this.customerForm.patchValue({
@@ -61,6 +72,15 @@ export class CustomerComponent implements OnInit {
         console.log(this.customerForm);
         console.log('Saved: ' + JSON.stringify(this.customerForm.value));
     }
+
+
+    setMessage(c: AbstractControl): void {
+        this.emailValidationMessage = '';
+        if ((c.touched || c.dirty) && c.errors) {
+            this.emailValidationMessage = Object.keys(c.errors).map(key => this.validationMessages[key]).join(' ');
+        }
+    }
+
     setNotification(notifyVia: string): void {
        const phoneControl = this.customerForm.get('phone');
        if (notifyVia === 'text') {
